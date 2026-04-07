@@ -1,161 +1,121 @@
--- G13 DOORS: UNIVERSAL SMART GUI (AUTO-DETECT P1 & P2)
-local ScreenGui = Instance.new("ScreenGui")
-local MainFrame = Instance.new("Frame")
-local ToggleBtn = Instance.new("TextButton")
-local AntiGodBtn = Instance.new("TextButton")
-local ItemBtn = Instance.new("TextButton")
-local InteractBtn = Instance.new("TextButton")
-local VisBtn = Instance.new("TextButton")
-local OptBtn = Instance.new("TextButton")
+-- G13 DOORS V3: FIXED & AUTO-REFRESH
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local MainFrame = Instance.new("Frame", ScreenGui)
+local ToggleBtn = Instance.new("TextButton", ScreenGui)
 
--- DETECCIÓN AUTOMÁTICA DE PISO (ANTI-KICK)
-local IsMines = false
-if game.PlaceId == 11532560810 or workspace:FindFirstChild("Mines") or workspace:FindFirstChild("Floor2") then
-    IsMines = true
-end
-
-ScreenGui.Parent = game.CoreGui
-
--- 1. BOTÓN MINIMIZAR (CÍRCULO FLOTANTE)
-ToggleBtn.Parent = ScreenGui
-ToggleBtn.Text = IsMines and "MINES" or "HOTEL"
-ToggleBtn.Size = UDim2.new(0, 55, 0, 55)
-ToggleBtn.Position = UDim2.new(0, 10, 0.6, 0)
-ToggleBtn.BackgroundColor3 = IsMines and Color3.fromRGB(0, 100, 200) or Color3.fromRGB(150, 0, 0)
-ToggleBtn.Draggable = true
-ToggleBtn.Active = true
-Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
-
--- 2. PANEL PRINCIPAL
-MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-MainFrame.Size = UDim2.new(0, 190, 0, 280)
+-- CONFIGURACIÓN VISUAL (Panel más compacto)
+MainFrame.Size = UDim2.new(0, 170, 0, 260)
 MainFrame.Position = UDim2.new(0.1, 0, 0.3, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
 MainFrame.Visible = true
-MainFrame.Draggable = true
 MainFrame.Active = true
+MainFrame.Draggable = true
 Instance.new("UICorner", MainFrame)
 
-ToggleBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = not MainFrame.Visible
+ToggleBtn.Size = UDim2.new(0, 45, 0, 45)
+ToggleBtn.Position = UDim2.new(0, 10, 0.7, 0)
+ToggleBtn.Text = "MENU"
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+ToggleBtn.Draggable = true
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(1, 0)
+ToggleBtn.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
+
+local function createBtn(txt, pos, color)
+    local b = Instance.new("TextButton", MainFrame)
+    b.Size = UDim2.new(0.9, 0, 0.15, 0)
+    b.Position = pos
+    b.Text = txt
+    b.BackgroundColor3 = color
+    b.TextColor3 = Color3.new(1, 1, 1)
+    Instance.new("UICorner", b)
+    return b
+end
+
+-- VARIABLES DE ESTADO
+local _G = {
+    AntiEntity = false,
+    ESP = false,
+    AutoLoot = false,
+    FullBright = false,
+    FPS = false
+}
+
+-- 1. PROTECCIÓN (SCREECH, GIGGLE, EYES)
+local btnAnti = createBtn("PROTECCIÓN: OFF", UDim2.new(0.05, 0, 0.05, 0), Color3.fromRGB(80, 0, 120))
+btnAnti.MouseButton1Click:Connect(function()
+    _G.AntiEntity = not _G.AntiEntity
+    btnAnti.Text = _G.AntiEntity and "PROTECCIÓN: ON" or "PROTECCIÓN: OFF"
+    btnAnti.BackgroundColor3 = _G.AntiEntity and Color3.fromRGB(180, 0, 255) or Color3.fromRGB(80, 0, 120)
 end)
 
--- 3. ANTI-ENTIDADES (SCREECH, EYES, LOOKMAN & GIGGLE)
-local antiActive = false
-AntiGodBtn.Parent = MainFrame
-AntiGodBtn.Text = "PROTECCIÓN: OFF"
-AntiGodBtn.Size = UDim2.new(0.9, 0, 0.15, 0)
-AntiGodBtn.Position = UDim2.new(0.05, 0, 0.03, 0)
-AntiGodBtn.BackgroundColor3 = Color3.fromRGB(80, 0, 120)
-AntiGodBtn.TextColor3 = Color3.new(1, 1, 1)
-
-AntiGodBtn.MouseButton1Click:Connect(function()
-    antiActive = not antiActive
-    AntiGodBtn.Text = antiActive and "PROTECCIÓN: ON" or "PROTECCIÓN: OFF"
-    AntiGodBtn.BackgroundColor3 = antiActive and Color3.fromRGB(180, 0, 255) or Color3.fromRGB(80, 0, 120)
-    
-    task.spawn(function()
-        while antiActive do
-            local char = game.Players.LocalPlayer.Character
-            -- Anti-Screech (Universal)
-            if char:FindFirstChild("Screech") then char.Screech:Destroy() end
-            
-            -- Anti-Giggle (Solo en P2 para evitar sospechas)
-            if IsMines and char:FindFirstChild("Giggle") then char.Giggle:Destroy() end
-            
-            -- Anti-Eyes & Lookman (Universal)
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v.Name == "Eyes" or v.Name == "Lookman" then
-                    game:GetService("ReplicatedStorage").EntityInfo.EyesOnScreen:FireServer(false)
-                end
-            end
-            task.wait(0.2)
-        end
-    end)
+-- 2. ESP MEJORADO (SOLO PUERTA REAL + AUTO-REFRESH)
+local btnESP = createBtn("ESP OBJETIVOS: OFF", UDim2.new(0.05, 0, 0.23, 0), Color3.fromRGB(40, 40, 40))
+btnESP.MouseButton1Click:Connect(function()
+    _G.ESP = not _G.ESP
+    btnESP.Text = _G.ESP and "ESP: ON" or "ESP: OFF"
 end)
 
--- 4. ESP INTELIGENTE (DUPE / SEEK GUIDE / PUERTA REAL)
-ItemBtn.Parent = MainFrame
-ItemBtn.Text = "ESP: OBJETIVOS"
-ItemBtn.Size = UDim2.new(0.9, 0, 0.15, 0)
-ItemBtn.Position = UDim2.new(0.05, 0, 0.19, 0)
+-- 3. AUTO-LOOT (ORO, LLAVES Y CANDADOS)
+local btnLoot = createBtn("AUTO-LOOT: OFF", UDim2.new(0.05, 0, 0.41, 0), Color3.fromRGB(40, 40, 40))
+btnLoot.MouseButton1Click:Connect(function()
+    _G.AutoLoot = not _G.AutoLoot
+    btnLoot.Text = _G.AutoLoot and "LOOT: ON" or "LOOT: OFF"
+end)
 
-ItemBtn.MouseButton1Click:Connect(function()
-    for _, v in pairs(workspace:GetDescendants()) do
-        -- GUÍA DE SEEK (Luz Azul en P2)
-        if IsMines and (v.Name == "SeekGuideLight" or v.Name == "GuideLight") then
-            local h = Instance.new("Highlight", v)
-            h.FillColor = Color3.fromRGB(0, 200, 255)
-            h.FillTransparency = 0.2
-        
-        -- PUERTA CORRECTA (Ignora Dupe en P1)
-        elseif v.Name == "Door" and v:FindFirstChild("Sign") then
-            if not IsMines and v.Parent.Name ~= "DupeRoom" then
-                local h = Instance.new("Highlight", v)
-                h.FillColor = Color3.new(0, 1, 0) -- Verde = Real
-            elseif IsMines then
-                local h = Instance.new("Highlight", v)
-                h.FillColor = Color3.new(0, 1, 0)
-            end
-            
-        -- ITEMS, LLAVES Y LIBROS
-        elseif v.Name == "Key" or v.Name == "MinesKey" or v.Name == "Lever" or v.Name == "LiveHintBook" then
-            local h = Instance.new("Highlight", v)
-            h.FillColor = Color3.new(1, 1, 0)
-        end
+-- 4. FULLBRIGHT PERMANENTE
+local btnVis = createBtn("FULLBRIGHT: OFF", UDim2.new(0.05, 0, 0.59, 0), Color3.fromRGB(40, 40, 40))
+btnVis.MouseButton1Click:Connect(function()
+    _G.FullBright = not _G.FullBright
+    btnVis.Text = _G.FullBright and "Luz: ON" or "Luz: OFF"
+end)
+
+-- 5. OPTIMIZADOR FPS (REDUCCIÓN DE GRÁFICOS)
+local btnFPS = createBtn("FPS OPTIMIZADO", UDim2.new(0.05, 0, 0.77, 0), Color3.fromRGB(0, 100, 0))
+btnFPS.MouseButton1Click:Connect(function()
+    for _, v in pairs(game:GetDescendants()) do
+        if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false end
     end
 end)
 
--- 5. AUTO-LOOT (COFRES, CAJONES Y ORO)
-local lootActive = false
-InteractBtn.Parent = MainFrame
-InteractBtn.Text = "AUTO-LOOT: OFF"
-InteractBtn.Size = UDim2.new(0.9, 0, 0.15, 0)
-InteractBtn.Position = UDim2.new(0.05, 0, 0.35, 0)
+-- LOOP PRINCIPAL (ESTO ARREGLA TODO)
+task.spawn(function()
+    while task.wait(1) do
+        local char = game.Players.LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        
+        -- Loop de Protección e Iluminación
+        if _G.AntiEntity then
+            if char:FindFirstChild("Screech") then char.Screech:Destroy() end
+            if char:FindFirstChild("Giggle") then char.Giggle:Destroy() end
+        end
+        
+        if _G.FullBright then
+            game:GetService("Lighting").Brightness = 2
+            game:GetService("Lighting").ClockTime = 14
+            game:GetService("Lighting").FogEnd = 100000
+        end
 
-InteractBtn.MouseButton1Click:Connect(function()
-    lootActive = not lootActive
-    InteractBtn.Text = lootActive and "AUTO-LOOT: ON" or "AUTO-LOOT: OFF"
-    InteractBtn.BackgroundColor3 = lootActive and Color3.fromRGB(0, 150, 150) or Color3.fromRGB(60, 60, 60)
-    
-    task.spawn(function()
-        while lootActive do
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v:IsA("ProximityPrompt") and v.Parent and v.Parent.Name ~= "Wardrobe" then
+        -- Loop de ESP y Loot
+        for _, v in pairs(workspace:GetDescendants()) do
+            -- ESP PUERTAS (Solo el modelo de la puerta)
+            if _G.ESP and v.Name == "Door" and v:FindFirstChild("Sign") and v.Parent.Name ~= "DupeRoom" then
+                if not v:FindFirstChild("Highlight") then
+                    local h = Instance.new("Highlight", v)
+                    h.FillColor = Color3.new(0, 1, 0)
+                    h.OutlineTransparency = 1
+                end
+            end
+
+            -- AUTO-LOOT (Oro, Llaves, Candados)
+            if _G.AutoLoot and v:IsA("ProximityPrompt") then
+                local name = v.Parent.Name:lower()
+                if name:find("key") or name:find("gold") or name:find("lever") or name:find("lock") then
                     v.HoldDuration = 0
-                    if v.Enabled and (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Parent:GetPivot().Position).Magnitude < 8 then
+                    if v.Enabled and root and (root.Position - v.Parent:GetPivot().Position).Magnitude < 10 then
                         fireproximityprompt(v)
                     end
                 end
             end
-            task.wait(0.3)
         end
-    end)
-end)
-
--- 6. FULLBRIGHT (VISIBILIDAD TOTAL)
-VisBtn.Parent = MainFrame
-VisBtn.Text = "ILUMINAR MAPA"
-VisBtn.Size = UDim2.new(0, 171, 0, 42)
-VisBtn.Position = UDim2.new(0.05, 0, 0.51, 0)
-VisBtn.MouseButton1Click:Connect(function()
-    local l = game:GetService("Lighting")
-    l.Brightness = 2
-    l.ClockTime = 14
-    l.FogEnd = 100000
-end)
-
--- 7. OPTIMIZADOR FPS (G13 LIGHT MODE)
-OptBtn.Parent = MainFrame
-OptBtn.Text = "OPTIMIZAR FPS"
-OptBtn.Size = UDim2.new(0.9, 0, 0.15, 0)
-OptBtn.Position = UDim2.new(0.05, 0, 0.67, 0)
-OptBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
-
-OptBtn.MouseButton1Click:Connect(function()
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("BasePart") then v.Material = Enum.Material.SmoothPlastic v.CastShadow = false end
-        if v:IsA("PointLight") or v:IsA("SpotLight") then v.Shadows = false end
     end
-    OptBtn.Text = "FPS OPTIMIZADO"
 end)
